@@ -80,6 +80,41 @@ public class GBPPL extends EntityListener{
 				return;
 			}
 		//}
+		//Check for permissions
+		if(plugin.hasPermission(damager, "GroupBasedPVP.pvp.everyone")){
+			return;
+		}
+		if(plugin.hasPermission(player, "GroupBasedPVP.pvp.protect")){
+			damager.sendMessage(ChatColor.RED + "The player " + player.getDisplayName() + " can't be attacked by anyone.");
+			event.setCancelled(true);
+			try{
+				damager.setHealth(damager.getHealth() + penalty);
+			}catch(IllegalArgumentException exe){
+				damager.setHealth(0);
+			}
+			try{
+				player.setHealth(player.getHealth() + gift);
+			}catch(IllegalArgumentException exe){
+				player.setHealth(20);
+			}
+			return;
+		}
+		if(plugin.hasPermission(damager, "GroupBasedPVP.pvp.disallow")){
+			damager.sendMessage(ChatColor.RED + "You are not allowed to attack anyone.");
+			event.setCancelled(true);
+			try{
+				damager.setHealth(damager.getHealth() + penalty);
+			}catch(IllegalArgumentException exe){
+				damager.setHealth(0);
+			}
+			try{
+				player.setHealth(player.getHealth() + gift);
+			}catch(IllegalArgumentException exe){
+				player.setHealth(20);
+			}
+			return;
+		}
+		//Check for config
 		int lengthofdamager;
 		if(plugin.permBukkit){
 			lengthofdamager = plugin.getGroups(damager).length;
@@ -104,39 +139,6 @@ public class GBPPL extends EntityListener{
 				}
 			}
 			for(int w = 0; w < disallowedGroups.length; w++){
-				if(damager.hasPermission("GroupBasedPVP.pvp.everyone")){
-					return;
-				}
-				if(player.hasPermission("GroupBasedPVP.pvp.protect")){
-					damager.sendMessage(ChatColor.RED + "The player " + player.getDisplayName() + " can't be attacked by anyone.");
-					event.setCancelled(true);
-					try{
-						damager.setHealth(damager.getHealth() + penalty);
-					}catch(IllegalArgumentException exe){
-						damager.setHealth(0);
-					}
-					try{
-						player.setHealth(player.getHealth() + gift);
-					}catch(IllegalArgumentException exe){
-						player.setHealth(20);
-					}
-					return;
-				}
-				if(damager.hasPermission("GroupBasedPVP.pvp.disallow")){
-					damager.sendMessage(ChatColor.RED + "You are not allowed to attack anyone.");
-					event.setCancelled(true);
-					try{
-						damager.setHealth(damager.getHealth() + penalty);
-					}catch(IllegalArgumentException exe){
-						damager.setHealth(0);
-					}
-					try{
-						player.setHealth(player.getHealth() + gift);
-					}catch(IllegalArgumentException exe){
-						player.setHealth(20);
-					}
-					return;
-				}
 				if(disallowedGroups[w].toCharArray()[0] == '*'){
 					damager.sendMessage(ChatColor.RED + "The group " + damagergroup + " is not allowed to attack anyone!"); 
 					event.setCancelled(true);

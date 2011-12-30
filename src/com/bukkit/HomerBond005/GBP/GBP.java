@@ -15,6 +15,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import ru.tehkode.permissions.PermissionGroup;
 import ru.tehkode.permissions.PermissionManager;
+import ru.tehkode.permissions.bukkit.PermissionsEx;
 
 import com.platymuus.bukkit.permissions.*;
 
@@ -39,7 +40,7 @@ public class GBP extends JavaPlugin{
     		permBukkit = true;
     		System.out.println("[GroupBasedPVP] using PermissionsBukkit.");
     	}else if(pm.getPlugin("PermissionsEx") != null){
-    		pexmanager = new PermissionManager(new Configuration(new File("plugins/PermissionsEx/config.yml")));
+    		pexmanager = PermissionsEx.getPermissionManager();
     		permBukkit = false;
     		System.out.println("[GroupBasedPVP] using PermissionsEx.");
     	}else{
@@ -112,7 +113,8 @@ public class GBP extends JavaPlugin{
 			}
 		}else{
 			for(PermissionGroup group : pexmanager.getUser(playername).getGroups()){
-				if(group.getName() == comparingGroup){
+				System.out.println("'" + group.getName() + "'|'" + comparingGroup + "'");
+				if(group.getName().equalsIgnoreCase(comparingGroup)){
 					return true;
 				}
 			}
@@ -134,5 +136,12 @@ public class GBP extends JavaPlugin{
 			e.printStackTrace();
 		}
 		return tempmap;
+	}
+	public boolean hasPermission(Player player, String permission){
+		if(permBukkit){
+			return player.hasPermission(permission);
+		}else{
+			return pexmanager.has(player, permission);
+		}
 	}
 }

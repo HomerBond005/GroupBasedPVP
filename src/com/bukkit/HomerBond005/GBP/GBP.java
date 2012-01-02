@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.bukkit.entity.Player;
@@ -72,6 +73,10 @@ public class GBP extends JavaPlugin{
 				penalties.createNewFile();
 				bukkitpenalties.setProperty("HealthAttackedPlayer", "0");
 				bukkitpenalties.setProperty("HealthAttackingPlayer", "-5");
+				bukkitpenalties.setProperty("CannotBeAttacked", "The player %p can't be attacked by anyone.");
+				bukkitpenalties.setProperty("NoPermAttackAnyone", "You are not allowed to attack anyone.");
+				bukkitpenalties.setProperty("GroupNoPermAttackAnyone", "The group %g is not allowed to attack anyone!");
+				bukkitpenalties.setProperty("Group1NoPermAttackGroup2", "The group %g1 is not allowed to attack the group %g2!");
 				bukkitpenalties.save();
 				System.out.println("[GroupBasedPVP]: penalties.yml created.");
 			}catch(IOException e){
@@ -87,6 +92,24 @@ public class GBP extends JavaPlugin{
 			penaltiesinput = new FileInputStream(penalties);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
+		}
+		Yaml yaml = new Yaml();
+		@SuppressWarnings("unchecked")
+		HashMap<Object,Object> yamlobj = (HashMap<Object,Object>)yaml.load(penaltiesinput);
+		try{
+			penaltiesinput.close();
+		}catch (IOException e1){
+			e1.printStackTrace();
+		}
+		try{
+			yamlobj.get("CannotBeAttacked").toString();
+		}catch(NullPointerException e){
+			bukkitpenalties.load();
+			bukkitpenalties.setProperty("CannotBeAttacked", "The player %p can't be attacked by anyone.");
+			bukkitpenalties.setProperty("NoPermAttackAnyone", "You are not allowed to attack anyone.");
+			bukkitpenalties.setProperty("GroupNoPermAttackAnyone", "The group %g is not allowed to attack anyone!");
+			bukkitpenalties.setProperty("Group1NoPermAttackGroup2", "The group %g1 is not allowed to attack the group %g2!");
+			bukkitpenalties.save();
 		}
 		System.out.println("[GroupBasedPVP]: config.yml loaded.");
 		System.out.println("[GroupBasedPVP] is enabled.");
@@ -113,7 +136,6 @@ public class GBP extends JavaPlugin{
 			}
 		}else{
 			for(PermissionGroup group : pexmanager.getUser(playername).getGroups()){
-				System.out.println("'" + group.getName() + "'|'" + comparingGroup + "'");
 				if(group.getName().equalsIgnoreCase(comparingGroup)){
 					return true;
 				}

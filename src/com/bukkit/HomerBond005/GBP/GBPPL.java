@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import org.bukkit.ChatColor;
+import org.bukkit.craftbukkit.entity.CraftArrow;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -73,27 +74,22 @@ public class GBPPL extends EntityListener{
 		}
 		Player player = null;
 		Player damager = null;
-		/*if(event.getCause() == DamageCause.PROJECTILE){
-			
-		}else{*/
-			EntityDamageByEntityEvent e;
-			try{
-				e = (EntityDamageByEntityEvent) event;
-			}catch(ClassCastException classevent){
-				return;
-			}
-			try{
-				player = (Player) event.getEntity();
-			}catch(ClassCastException classevent){
-				return;
-			}
-			try{
-				damager = (Player) e.getDamager();
-			}catch(ClassCastException classevent){
-				return;
-			}
-		//}
-		//Check for permissions
+		EntityDamageByEntityEvent e;
+		try{
+			e = (EntityDamageByEntityEvent) event;
+		}catch(ClassCastException classevent){
+			return;
+		}
+		try{
+			player = (Player) event.getEntity();
+		}catch(ClassCastException classevent){
+			return;
+		}
+		try{
+			damager = (Player) e.getDamager();
+		}catch(ClassCastException classevent){
+			damager = (Player)((CraftArrow)e.getDamager()).getShooter();
+		}
 		bukkitpenalties.load();
 		if(plugin.hasPermission(damager, "GroupBasedPVP.pvp.everyone")){
 			return;

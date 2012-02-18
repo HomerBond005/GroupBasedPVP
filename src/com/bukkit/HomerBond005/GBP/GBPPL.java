@@ -100,7 +100,8 @@ public class GBPPL extends EntityListener{
 			return;
 		}
 		if(plugin.hasPermission(player, "GroupBasedPVP.pvp.protect")){
-			damager.sendMessage(ChatColor.RED + stringCannotBeAttacked.replaceAll("%p", player.getDisplayName()));
+			if(stringCannotBeAttacked.length() != 0)
+				damager.sendMessage(ChatColor.RED + stringCannotBeAttacked.replaceAll("%p", player.getDisplayName()));
 			event.setCancelled(true);
 			try{
 				damager.setHealth(damager.getHealth() + penalty);
@@ -115,7 +116,8 @@ public class GBPPL extends EntityListener{
 			return;
 		}
 		if(plugin.hasPermission(damager, "GroupBasedPVP.pvp.disallow")){
-			damager.sendMessage(ChatColor.RED + stringNoPermAttackAnyone);
+			if(stringNoPermAttackAnyone.length() != 0)
+				damager.sendMessage(ChatColor.RED + stringNoPermAttackAnyone);
 			event.setCancelled(true);
 			try{
 				damager.setHealth(damager.getHealth() + penalty);
@@ -155,7 +157,8 @@ public class GBPPL extends EntityListener{
 			}
 			for(int w = 0; w < disallowedGroups.length; w++){
 				if(disallowedGroups[w].toCharArray()[0] == '*'){
-					damager.sendMessage(ChatColor.RED + stringGroupNoPermAttackAnyone.replaceAll("%g", damagergroup)); 
+					if(stringGroupNoPermAttackAnyone.length() != 0)
+						damager.sendMessage(ChatColor.RED + stringGroupNoPermAttackAnyone.replaceAll("%g", damagergroup)); 
 					event.setCancelled(true);
 					System.out.println(damager.getDisplayName() + " tried to attack " + player.getDisplayName() + ", but isn't allowed.");
 					try{
@@ -171,7 +174,8 @@ public class GBPPL extends EntityListener{
 					return;
 				}
 				if(plugin.inGroup(player.getDisplayName(), disallowedGroups[w])){
-					damager.sendMessage(ChatColor.RED + stringGroup1NoPermAttackGroup2.replaceAll("%g1", damagergroup).replaceAll("%g2", disallowedGroups[w])); 
+					if(stringGroup1NoPermAttackGroup2.length() != 0)
+						damager.sendMessage(ChatColor.RED + stringGroup1NoPermAttackGroup2.replaceAll("%g1", damagergroup).replaceAll("%g2", disallowedGroups[w])); 
 					event.setCancelled(true);
 					System.out.println(damager.getDisplayName() + " tried to attack " + player.getDisplayName() + ", but isn't allowed.");
 					try{
@@ -188,6 +192,6 @@ public class GBPPL extends EntityListener{
 				}
 			}
 		}
-		event.setCancelled(false);
+		//event.setCancelled(false);
 	}
 }

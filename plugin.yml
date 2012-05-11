@@ -1,5 +1,5 @@
 name: GroupBasedPVP
-main: com.bukkit.HomerBond005.GBP.GBP
+main: de.HomerBond005.GroupBasedPVP.GBP
 author: HomerBond005
-version: 1.9
+version: 1.9.1-dev
 commands:

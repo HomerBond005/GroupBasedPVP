@@ -1,4 +1,10 @@
-package com.bukkit.HomerBond005.GBP;
+/*
+ * Copyright HomerBond005
+ * 
+ *  Published under CC BY-NC-ND 3.0
+ *  http://creativecommons.org/licenses/by-nc-nd/3.0/
+ */
+package de.HomerBond005.GroupBasedPVP;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,9 +38,9 @@ public class GBP extends JavaPlugin{
 	private final GBPPL playerlistener = new GBPPL(this);
 	Boolean PermissionsPlugin = false;
     PluginManager pm;
-    static PermissionManager pexmanager;
-    static PermissionsPlugin pbplugin;
-    static int permSys;
+    PermissionManager pexmanager;
+    PermissionsPlugin pbplugin;
+    int permSys;
     private boolean setupPermissions(){
     	if(pm.getPlugin("PermissionsBukkit") != null){
     		pbplugin = (PermissionsPlugin)pm.getPlugin("PermissionsBukkit");
@@ -50,6 +56,7 @@ public class GBP extends JavaPlugin{
     	}else{
     		System.out.println("[GroupBasedPVP]: Please install PermissionsBukkit or PermissionsEx or bPermissions!");
     		pm.disablePlugin(this);
+    		return false;
     	}
 		return true;
     }
@@ -125,9 +132,12 @@ public class GBP extends JavaPlugin{
 	public void onDisable(){
 		System.out.println("[GroupBasedPVP] is disabled.");
 	}
-	public static String[] getGroups(Player player){
+	public String[] getGroups(Player player){
 		if(permSys == 1){
-			List<Group> groups = pbplugin.getPlayerInfo(player.getName()).getGroups();
+			PermissionInfo playerinfo = pbplugin.getPlayerInfo(player.getName());
+			if(playerinfo == null)
+				return new String[0];
+			List<Group> groups = playerinfo.getGroups();
 			List<String> groupnames = new ArrayList<String>();
 			for(Group group : groups){
 				groupnames.add(group.getName());
@@ -146,7 +156,7 @@ public class GBP extends JavaPlugin{
 			return new String[0];
 		}
 	}
-	public static boolean inGroup(Player player, String comparingGroup){
+	public boolean inGroup(Player player, String comparingGroup){
 		String[] groups = getGroups(player);
 		for(String group : groups){
 			if(group.equalsIgnoreCase(comparingGroup))

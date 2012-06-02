@@ -7,10 +7,6 @@
 package de.HomerBond005.GroupBasedPVP;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import org.bukkit.ChatColor;
@@ -25,21 +21,19 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
-import org.yaml.snakeyaml.Yaml;
+import org.bukkit.entity.Snowball;
 
 public class GBPPL implements Listener{
-	static String mainDir = "plugins/GroupBasedPVP";
-	static File penalties = new File (mainDir + File.separator + "penalties.yml");
-	static FileConfiguration bukkitpenalties = YamlConfiguration.loadConfiguration(penalties);
-	static FileInputStream penaltiesinput = null;
-	String stringCannotBeAttacked = "";
-	String stringNoPermAttackAnyone = "";
-	String stringGroupNoPermAttackAnyone = "";
-	String stringGroup1NoPermAttackGroup2 = "";
-	int gift = 0;
-	int penalty = 0;
-	public static GBP plugin;
-	Yaml yaml = new Yaml();
+	private static String mainDir = "plugins/GroupBasedPVP";
+	private static File penalties = new File (mainDir + File.separator + "penalties.yml");
+	private static FileConfiguration bukkitpenalties = YamlConfiguration.loadConfiguration(penalties);
+	private String stringCannotBeAttacked = "";
+	private String stringNoPermAttackAnyone = "";
+	private String stringGroupNoPermAttackAnyone = "";
+	private String stringGroup1NoPermAttackGroup2 = "";
+	private int gift = 0;
+	private int penalty = 0;
+	private static GBP plugin;
 	public GBPPL(GBP gbp){
 		plugin = gbp;
 	}
@@ -64,15 +58,17 @@ public class GBPPL implements Listener{
 			try{
 				damager = (Player)((CraftArrow)e.getDamager()).getShooter();
 			}catch(Exception exce){
-					return;
+				try{
+					damager = (Player)((Snowball)e.getDamager()).getShooter();
+				}catch(Exception exce2){
+						return;
+				}
 			}
 		}
-		//Same as in potion listener
 		loadConfig();
 		if(plugin.hasPermission(damager, "GroupBasedPVP.pvp.everyone")){
 			return;
 		}
-		//End of same as in potion listener
 		if(handleDamagerGroups(damager, player))
 			event.setCancelled(true);
 	}
@@ -88,57 +84,27 @@ public class GBPPL implements Listener{
 			damager = (Player) event.getPotion().getShooter();
 		else
 			return;
-		//Same as in other listener
 		loadConfig();
 		if(plugin.hasPermission(damager, "GroupBasedPVP.pvp.everyone")){
 			return;
 		}
-		//End of same as in other listener
 		for(Player player : players){
 			if(handleDamagerGroups(damager, player))
 				event.setCancelled(true);
 		}
 	}
-	@SuppressWarnings("unchecked")
 	private void loadConfig(){
-		try{
-			penaltiesinput = new FileInputStream(penalties);
-		}catch (FileNotFoundException e){
-			e.printStackTrace();
-		}
-		if(!(penalties.exists())){
-			try{
-				penalties.createNewFile();
-				bukkitpenalties.set("HealthAttackedPlayer", "0");
-				bukkitpenalties.set("HealthAttackingPlayer", "-5");
-				bukkitpenalties.set("CannotBeAttacked", "The player %p can't be attacked by anyone.");
-				bukkitpenalties.set("NoPermAttackAnyone", "You are not allowed to attack anyone.");
-				bukkitpenalties.set("GroupNoPermAttackAnyone", "The group %g is not allowed to attack anyone!");
-				bukkitpenalties.set("Group1NoPermAttackGroup2", "The group %g1 is not allowed to attack the group %g2!");
-				bukkitpenalties.save(penalties);
-				System.out.println("[GroupBasedPVP]: penalties.yml created.");
-			}catch(IOException e){
-				e.printStackTrace();
-			}
-		}
-		HashMap<Object,Object> yamlobj = (HashMap<Object,Object>)yaml.load(penaltiesinput);
-		try{
-			penaltiesinput.close();
-		}catch (IOException e1){
-			e1.printStackTrace();
-		}
-		penalty = Integer.parseInt(yamlobj.get("HealthAttackingPlayer").toString());
-		gift = Integer.parseInt(yamlobj.get("HealthAttackedPlayer").toString());
-		stringCannotBeAttacked = yamlobj.get("CannotBeAttacked").toString();
-		stringNoPermAttackAnyone = yamlobj.get("NoPermAttackAnyone").toString();
-		stringGroupNoPermAttackAnyone = yamlobj.get("GroupNoPermAttackAnyone").toString();
-		stringGroup1NoPermAttackGroup2 = yamlobj.get("Group1NoPermAttackGroup2").toString();
 		try {
 			bukkitpenalties.load(penalties);
 		}catch(Exception e1){
 		}
+		penalty = bukkitpenalties.getInt("HealthAttackingPlayer", -5);
+		gift = bukkitpenalties.getInt("HealthAttackingPlayer", 0);
+		stringCannotBeAttacked = bukkitpenalties.getString("CannotBeAttacked", "The player %p can't be attacked by anyone.");
+		stringNoPermAttackAnyone = bukkitpenalties.getString("NoPermAttackAnyone", "You are not allowed to attack anyone.");
+		stringGroupNoPermAttackAnyone = bukkitpenalties.getString("GroupNoPermAttackAnyone", "The group %g is not allowed to attack anyone!");
+		stringGroup1NoPermAttackGroup2 = bukkitpenalties.getString("Group1NoPermAttackGroup2", "The group %g1 is not allowed to attack the group %g2!");
 	}
-	
 	private boolean handleDamagerGroups(Player damager, Player player){
 		if(plugin.hasPermission(damager, "GroupBasedPVP.pvp.disallow")){
 			if(stringNoPermAttackAnyone.length() != 0)
@@ -188,7 +154,7 @@ public class GBPPL implements Listener{
 				if(disallowedGroups[w].toCharArray()[0] == '*'){
 					if(stringGroupNoPermAttackAnyone.length() != 0)
 						damager.sendMessage(ChatColor.RED + stringGroupNoPermAttackAnyone.replaceAll("%g", damagergroup)); 
-					System.out.println(damager.getDisplayName() + "[" + damagergroup + "] tried to attack " + player.getDisplayName() + ", but isn't allowed to attack anyone.");
+					plugin.printConsoleMsg(damager.getDisplayName() + "[" + damagergroup + "] tried to attack " + player.getDisplayName() + ", but isn't allowed to attack anyone.");
 					try{
 						damager.setHealth(damager.getHealth() + penalty);
 					}catch(IllegalArgumentException exe){
@@ -204,7 +170,7 @@ public class GBPPL implements Listener{
 				if(plugin.inGroup(player, disallowedGroups[w])){
 					if(stringGroup1NoPermAttackGroup2.length() != 0)
 						damager.sendMessage(ChatColor.RED + stringGroup1NoPermAttackGroup2.replaceAll("%g1", damagergroup).replaceAll("%g2", disallowedGroups[w]));
-					System.out.println(damager.getDisplayName() + "[" + damagergroup + "] tried to attack " + player.getDisplayName() + " [" + disallowedGroups[w] + "], but isn't allowed.");
+					plugin.printConsoleMsg(damager.getDisplayName() + "[" + damagergroup + "] tried to attack " + player.getDisplayName() + " [" + disallowedGroups[w] + "], but isn't allowed.");
 					try{
 						damager.setHealth(damager.getHealth() + penalty);
 					}catch(IllegalArgumentException exe){

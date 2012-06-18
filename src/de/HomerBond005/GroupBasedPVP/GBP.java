@@ -7,19 +7,19 @@
 package de.HomerBond005.GroupBasedPVP;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.mcstats.Metrics.Metrics;
-import org.yaml.snakeyaml.Yaml;
 import ru.tehkode.permissions.PermissionGroup;
 import ru.tehkode.permissions.PermissionManager;
 import ru.tehkode.permissions.bukkit.PermissionsEx;
@@ -31,11 +31,8 @@ import org.anjocaido.groupmanager.permissions.AnjoPermissionsHandler;
 
 public class GBP extends JavaPlugin{
 	private static String mainDir = "plugins/GroupBasedPVP";
-	private static File groupsconfig = new File (mainDir + File.separator + "config.yml");
 	private static File penalties = new File (mainDir + File.separator + "penalties.yml");
 	private static FileConfiguration bukkitpenalties = YamlConfiguration.loadConfiguration(penalties);
-	private static FileConfiguration bukkitconfig = YamlConfiguration.loadConfiguration(groupsconfig);
-	private static FileInputStream configinput = null;
 	private final GBPPL playerlistener = new GBPPL(this);
 	private Metrics metrics;
     private PluginManager pm;
@@ -44,84 +41,83 @@ public class GBP extends JavaPlugin{
     private GroupManager groupmanager;
     private int permSys;
     private boolean logConsole;
-    private boolean setupPermissions(){
-    	if(pm.getPlugin("PermissionsBukkit") != null){
-    		pbplugin = (PermissionsPlugin)pm.getPlugin("PermissionsBukkit");
-    		permSys = 1;
-    		System.out.println("[GroupBasedPVP] using PermissionsBukkit.");
-    	}else if(pm.getPlugin("PermissionsEx") != null){
-    		pexmanager = PermissionsEx.getPermissionManager();
-    		permSys = 2;
-    		System.out.println("[GroupBasedPVP] using PermissionsEx.");
-    	}else if(pm.getPlugin("bPermissions") != null){
-			permSys = 3;
-			System.out.println("[GroupBasedPVP] using bPermissions.");
-    	}else if(pm.getPlugin("GroupManager") != null){
-    		groupmanager = (GroupManager) pm.getPlugin("GroupManager");
-			permSys = 4;
-			System.out.println("[GroupBasedPVP] using GroupManager.");
-    	}else{
-    		System.err.println("[GroupBasedPVP]: Please install PermissionsBukkit or PermissionsEx or bPermissions or GroupManager!");
-    		pm.disablePlugin(this);
-    		return false;
-    	}
-		return true;
-    }
+    private Logger log;
+    private Updater updater;
+    
+    @Override
 	public void onEnable(){
+		log = getLogger();
 		pm = getServer().getPluginManager();
 		if(setupPermissions() == false){
 			return;
 		}
 	    pm.registerEvents(playerlistener, this);
-		new File (mainDir).mkdir();
-		if(!(groupsconfig.exists())){
-			try{
-				groupsconfig.createNewFile();
-				System.out.println("[GroupBasedPVP]: config.yml created.");
-			}catch(IOException e){
-				e.printStackTrace();
-			}
-		}
 		if(!(penalties.exists())){
 			try{
 				penalties.createNewFile();
-				System.out.println("[GroupBasedPVP]: penalties.yml created.");
+				log.log(Level.INFO, "penalties.yml created.");
 			}catch(IOException e){
 				e.printStackTrace();
 			}
 		}
-		try{
-			bukkitconfig.load(groupsconfig);
-			addDefault(bukkitconfig, "AttackerGroup", "AttackedGroup");
-			bukkitconfig.save(groupsconfig);
-			bukkitpenalties.load(penalties);
-			addDefault(bukkitpenalties, "HealthAttackedPlayer", "0");
-			addDefault(bukkitpenalties, "HealthAttackingPlayer", "-5");
-			addDefault(bukkitpenalties, "CannotBeAttacked", "The player %p can't be attacked by anyone.");
-			addDefault(bukkitpenalties, "NoPermAttackAnyone", "You are not allowed to attack anyone.");
-			addDefault(bukkitpenalties, "GroupNoPermAttackAnyone", "The group %g is not allowed to attack anyone!");
-			addDefault(bukkitpenalties, "Group1NoPermAttackGroup2", "The group %g1 is not allowed to attack the group %g2!");
-			addDefault(bukkitpenalties, "logInConsole", true);
-			bukkitpenalties.save(penalties);
-		}catch(Exception e){}
-		try {
-			configinput = new FileInputStream(groupsconfig);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+		if(!new File(getDataFolder(), "plugin.yml").exists()){
+			getConfig().set("AttackerGroup", "AttackedGroup");
+			saveConfig();
+			log.log(Level.INFO, "config.yml created.");
 		}
+		reloadConfig();
+		reloadPenalties();
+		bukkitpenalties.options().copyDefaults(true);
+		bukkitpenalties.addDefault("HealthAttackedPlayer", "0");
+		bukkitpenalties.addDefault("HealthAttackingPlayer", "-5");
+		bukkitpenalties.addDefault("CannotBeAttacked", "The player %p can't be attacked by anyone.");
+		bukkitpenalties.addDefault("NoPermAttackAnyone", "You are not allowed to attack anyone.");
+		bukkitpenalties.addDefault("GroupNoPermAttackAnyone", "The group %g is not allowed to attack anyone!");
+		bukkitpenalties.addDefault("Group1NoPermAttackGroup2", "The group %g1 is not allowed to attack the group %g2!");
+		bukkitpenalties.addDefault("logInConsole", true);
+		savePenalties();
 		logConsole = bukkitpenalties.getBoolean("logInConsole", true);
-		System.out.println("[GroupBasedPVP]: config.yml and penalties.yml loaded.");
+		log.log(Level.INFO, "config.yml and penalties.yml loaded.");
 		try {
 			metrics = new Metrics(this);
 			metrics.start();
 		} catch (IOException e) {
-			System.err.println("[GroupBasedPVP]: Error while enabling Metrics.");
+			log.log(Level.WARNING, "Error while enabling Metrics.");
 		}
-		System.out.println("[GroupBasedPVP] is enabled.");
+		updater = new Updater(this);
+		getServer().getPluginManager().registerEvents(updater, this);
+		log.log(Level.INFO, "is enabled.");
 	}
+    
+    @Override
 	public void onDisable(){
-		System.out.println("[GroupBasedPVP] is disabled.");
+		log.log(Level.INFO, "is disabled.");
 	}
+    
+    private boolean setupPermissions(){
+    	if(pm.getPlugin("PermissionsBukkit") != null){
+    		pbplugin = (PermissionsPlugin)pm.getPlugin("PermissionsBukkit");
+    		permSys = 1;
+    		log.log(Level.INFO, "using PermissionsBukkit.");
+    	}else if(pm.getPlugin("PermissionsEx") != null){
+    		pexmanager = PermissionsEx.getPermissionManager();
+    		permSys = 2;
+    		log.log(Level.INFO, "using PermissionsEx.");
+    	}else if(pm.getPlugin("bPermissions") != null){
+			permSys = 3;
+			log.log(Level.INFO, "using bPermissions.");
+    	}else if(pm.getPlugin("GroupManager") != null){
+    		groupmanager = (GroupManager) pm.getPlugin("GroupManager");
+			permSys = 4;
+			log.log(Level.INFO, "using GroupManager.");
+    	}else{
+    		log.log(Level.WARNING, "Please install PermissionsBukkit or PermissionsEx or bPermissions or GroupManager!");
+    		pm.disablePlugin(this);
+    		return false;
+    	}
+		return true;
+    }
+    
 	public String[] getGroups(Player player){
 		if(permSys == 1){
 			PermissionInfo playerinfo = pbplugin.getPlayerInfo(player.getName());
@@ -152,6 +148,7 @@ public class GBP extends JavaPlugin{
 			return new String[0];
 		}
 	}
+	
 	public boolean inGroup(Player player, String comparingGroup){
 		String[] groups = getGroups(player);
 		for(String group : groups){
@@ -160,22 +157,17 @@ public class GBP extends JavaPlugin{
 		}
 		return false;
 	}
-	@SuppressWarnings("unchecked")
-	public Map<Object, Object> configyaml(){
-		Yaml yaml = new Yaml();
-		try{
-			configinput = new FileInputStream(groupsconfig);
-		}catch(FileNotFoundException e){
-			e.printStackTrace();
-		}
-		Map<Object,Object> tempmap = (Map<Object, Object>) yaml.load(configinput);
-		try{
-			configinput.close();
-		}catch (IOException e){
-			e.printStackTrace();
+	
+	public Map<String, String> configyaml(){
+		reloadConfig();
+		Map<String, String> tempmap = new HashMap<String, String>();
+		Set<String> keys = getConfig().getKeys(false);
+		for(String key : keys){
+			tempmap.put(key, getConfig().getString(key));
 		}
 		return tempmap;
 	}
+	
 	public boolean hasPermission(Player player, String permission){
 		if(permSys == 1){
 			return player.hasPermission(permission);
@@ -193,16 +185,41 @@ public class GBP extends JavaPlugin{
 			return false;
 		}
 	}
+	
 	public void printConsoleMsg(String msg){
 		if(logConsole)
-			System.out.println(msg);
+			log.log(Level.INFO, msg);
 	}
+	
 	public void addDefault(FileConfiguration conf, String path, String value){
 		if(!conf.isSet(path))
 			conf.set(path, value);
 	}
-	public void addDefault(FileConfiguration conf, String path, boolean value){
-		if(!conf.isSet(path))
-			conf.set(path, value);
+	
+	public void reloadPenalties(){
+		bukkitpenalties = YamlConfiguration.loadConfiguration(penalties);
+	}
+	
+	public void savePenalties(){
+		try {
+			bukkitpenalties.save(penalties);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public String[] getPenalties(){
+		try {
+			bukkitpenalties.load(penalties);
+		}catch(Exception e1){
+		}
+		String[] temparr = new String[6];
+		temparr[0] = bukkitpenalties.getString("HealthAttackingPlayer", "-5");
+		temparr[1] = bukkitpenalties.getString("HealthAttackedPlayer", "0");
+		temparr[2] = bukkitpenalties.getString("CannotBeAttacked", "The player %p can't be attacked by anyone.");
+		temparr[3] = bukkitpenalties.getString("NoPermAttackAnyone", "You are not allowed to attack anyone.");
+		temparr[4] = bukkitpenalties.getString("GroupNoPermAttackAnyone", "The group %g is not allowed to attack anyone!");
+		temparr[5] = bukkitpenalties.getString("Group1NoPermAttackGroup2", "The group %g1 is not allowed to attack the group %g2!");
+		return temparr;
 	}
 }

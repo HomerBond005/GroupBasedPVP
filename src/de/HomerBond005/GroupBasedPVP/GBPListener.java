@@ -20,19 +20,30 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.entity.Snowball;
 
-public class GBPPL implements Listener{
+public class GBPListener implements Listener{
 	private String stringCannotBeAttacked = "";
 	private String stringNoPermAttackAnyone = "";
 	private String stringGroupNoPermAttackAnyone = "";
 	private String stringGroup1NoPermAttackGroup2 = "";
 	private int gift = 0;
 	private int penalty = 0;
-	private static GBP plugin;
+	private GBP plugin;
 	
-	public GBPPL(GBP gbp){
+	public GBPListener(GBP gbp){
 		plugin = gbp;
+		String[] loaded = gbp.getSettings();
+		penalty = Integer.parseInt(loaded[0]);
+		gift = Integer.parseInt(loaded[1]);
+		stringCannotBeAttacked = loaded[2];
+		stringNoPermAttackAnyone = loaded[3];
+		stringGroupNoPermAttackAnyone = loaded[4];
+		stringGroup1NoPermAttackGroup2 = loaded[5];
 	}
 	
+	/**
+	 * Called when an entity gets damage
+	 * @param event The event that is called
+	 */
 	@EventHandler(priority = EventPriority.HIGH)
 	public void onEntityDamage(EntityDamageEvent event){
 		Player player = null;
@@ -60,7 +71,6 @@ public class GBPPL implements Listener{
 				return;
 		else
 			return;
-		loadConfig();
 		if(plugin.hasPermission(damager, "GroupBasedPVP.pvp.everyone")){
 			return;
 		}
@@ -68,6 +78,10 @@ public class GBPPL implements Listener{
 			event.setCancelled(true);
 	}
 	
+	/**
+	 * Called when a potion splashes
+	 * @param event The event object that is called
+	 */
 	@EventHandler(priority = EventPriority.HIGH)
 	public void onPotionSplashEvent(PotionSplashEvent event){
 		Set<Player> players = new HashSet<Player>();
@@ -80,7 +94,6 @@ public class GBPPL implements Listener{
 			damager = (Player) event.getPotion().getShooter();
 		else
 			return;
-		loadConfig();
 		if(plugin.hasPermission(damager, "GroupBasedPVP.pvp.everyone")){
 			return;
 		}
@@ -89,92 +102,75 @@ public class GBPPL implements Listener{
 				event.setCancelled(true);
 		}
 	}
-	private void loadConfig(){
-		String[] loaded = plugin.getPenalties();
-		penalty = Integer.parseInt(loaded[0]);
-		gift = Integer.parseInt(loaded[1]);
-		stringCannotBeAttacked = loaded[2];
-		stringNoPermAttackAnyone = loaded[3];
-		stringGroupNoPermAttackAnyone = loaded[4];
-		stringGroup1NoPermAttackGroup2 = loaded[5];
-	}
-	private boolean handleDamagerGroups(Player damager, Player player){
+	
+	/**
+	 * Check if a player can attack another player
+	 * @param damager The player that is attacking
+	 * @param damaged The player that is attacked
+	 * @return Does the damager has insufficient permissions?
+	 */
+	private boolean handleDamagerGroups(Player damager, Player damaged){
 		if(plugin.hasPermission(damager, "GroupBasedPVP.pvp.disallow")){
-			if(stringNoPermAttackAnyone.length() != 0)
-				damager.sendMessage(ChatColor.RED + stringNoPermAttackAnyone);
+			if(stringNoPermAttackAnyone.length() != 0||stringNoPermAttackAnyone.equalsIgnoreCase("false"))
+				damager.sendMessage(ChatColor.RED+stringNoPermAttackAnyone);
+			try{
+				damager.setHealth(damager.getHealth()+penalty);
+			}catch(IllegalArgumentException exe){
+				damager.setHealth(0);
+			}
+			try{
+				damaged.setHealth(damaged.getHealth()+gift);
+			}catch(IllegalArgumentException exe){
+				damaged.setHealth(20);
+			}
+			return true;
+		}
+		if(plugin.hasPermission(damaged, "GroupBasedPVP.pvp.protect")){
+			if(stringCannotBeAttacked.length() != 0||stringCannotBeAttacked.equalsIgnoreCase("false"))
+				damager.sendMessage(ChatColor.RED + stringCannotBeAttacked.replaceAll("%p", damaged.getDisplayName()));
 			try{
 				damager.setHealth(damager.getHealth() + penalty);
 			}catch(IllegalArgumentException exe){
 				damager.setHealth(0);
 			}
 			try{
-				player.setHealth(player.getHealth() + gift);
+				damaged.setHealth(damaged.getHealth() + gift);
 			}catch(IllegalArgumentException exe){
-				player.setHealth(20);
+				damaged.setHealth(20);
 			}
 			return true;
 		}
-		if(plugin.hasPermission(player, "GroupBasedPVP.pvp.protect")){
-			if(stringCannotBeAttacked.length() != 0)
-				damager.sendMessage(ChatColor.RED + stringCannotBeAttacked.replaceAll("%p", player.getDisplayName()));
-			try{
-				damager.setHealth(damager.getHealth() + penalty);
-			}catch(IllegalArgumentException exe){
-				damager.setHealth(0);
-			}
-			try{
-				player.setHealth(player.getHealth() + gift);
-			}catch(IllegalArgumentException exe){
-				player.setHealth(20);
-			}
-			return true;
-		}
-		int lengthofdamager;
-		lengthofdamager = plugin.getGroups(damager).length;
+		int lengthofdamager = plugin.getGroups(damager).length;
 		for(int i = 0; i < lengthofdamager; i++){
 			String damagergroup = plugin.getGroups(damager)[i];
-			String[] disallowedGroups = null;
-			try{
-				disallowedGroups = plugin.configyaml().get(damagergroup).toString().split(", ");
-			}catch(NullPointerException excep){
-				try{
-					disallowedGroups[0] = plugin.configyaml().get(damagergroup).toString();
-				}catch(NullPointerException excep2){
-					return false;
-				}
-			}
-			for(int w = 0; w < disallowedGroups.length; w++){
-				if(disallowedGroups[w].toCharArray()[0] == '*'){
-					if(stringGroupNoPermAttackAnyone.length() != 0)
+			Set<String> disallowedGroups = plugin.getDisallowedGroupsAtLocationForGroup(damaged.getLocation(), damagergroup);
+			for(String disallowedGroup : disallowedGroups){
+				boolean illegal = false;
+				if(disallowedGroup.toCharArray()[0] == '*'){
+					if(stringGroupNoPermAttackAnyone.length() != 0||stringGroupNoPermAttackAnyone.equalsIgnoreCase("false"))
 						damager.sendMessage(ChatColor.RED + stringGroupNoPermAttackAnyone.replaceAll("%g", damagergroup)); 
-					plugin.printConsoleMsg(damager.getDisplayName() + "[" + damagergroup + "] tried to attack " + player.getDisplayName() + ", but isn't allowed to attack anyone.");
-					try{
-						damager.setHealth(damager.getHealth() + penalty);
-					}catch(IllegalArgumentException exe){
-						damager.setHealth(0);
-					}
-					try{
-						player.setHealth(player.getHealth() + gift);
-					}catch(IllegalArgumentException exe){
-						player.setHealth(20);
-					}
-					return true;
+					plugin.printConsoleMsg(damager.getDisplayName() + "[" + damagergroup + "] tried to attack " + damaged.getDisplayName() + ", but isn't allowed to attack anyone.");
+					illegal = true;
+				}else if(plugin.inGroup(damaged, disallowedGroup)){
+					if(stringGroup1NoPermAttackGroup2.length() != 0||stringGroup1NoPermAttackGroup2.equalsIgnoreCase("false"))
+						damager.sendMessage(ChatColor.RED + stringGroup1NoPermAttackGroup2.replaceAll("%g1", damagergroup).replaceAll("%g2", disallowedGroup));
+					plugin.printConsoleMsg(damager.getDisplayName() + "[" + damagergroup+"] tried to attack "+damaged.getDisplayName()+"["+disallowedGroup+"], but isn't allowed.");
+					illegal = true;
 				}
-				if(plugin.inGroup(player, disallowedGroups[w])){
-					if(stringGroup1NoPermAttackGroup2.length() != 0)
-						damager.sendMessage(ChatColor.RED + stringGroup1NoPermAttackGroup2.replaceAll("%g1", damagergroup).replaceAll("%g2", disallowedGroups[w]));
-					plugin.printConsoleMsg(damager.getDisplayName() + "[" + damagergroup + "] tried to attack " + player.getDisplayName() + "[" + disallowedGroups[w] + "], but isn't allowed.");
-					try{
-						damager.setHealth(damager.getHealth() + penalty);
-					}catch(IllegalArgumentException exe){
-						damager.setHealth(0);
+				if(illegal == true){
+					if(!plugin.hasPermission(damager, "GroupBasedPVP.pvpgroup."+disallowedGroup)){
+						try{
+							damager.setHealth(damager.getHealth() + penalty);
+						}catch(IllegalArgumentException exe){
+							damager.setHealth(0);
+						}
+						try{
+							damaged.setHealth(damaged.getHealth() + gift);
+						}catch(IllegalArgumentException exe){
+							damaged.setHealth(20);
+						}
+						return true;
 					}
-					try{
-						player.setHealth(player.getHealth() + gift);
-					}catch(IllegalArgumentException exe){
-						player.setHealth(20);
-					}
-					return true;
 				}
 			}
 		}

@@ -42,8 +42,7 @@ import org.anjocaido.groupmanager.GroupManager;
 import org.anjocaido.groupmanager.permissions.AnjoPermissionsHandler;
 
 public class GBP extends JavaPlugin{
-	private String mainDir = "plugins/GroupBasedPVP";
-	private File settingsFile = new File (mainDir + File.separator + "settings.yml");
+	private File settingsFile;
 	private FileConfiguration settings;
 	private GBPListener playerlistener;
 	private Metrics metrics;
@@ -54,12 +53,13 @@ public class GBP extends JavaPlugin{
     private int permSys;
     private boolean logConsole;
     private Logger log;
-    //private Updater updater;
+    private Updater updater;
     private Permission vault;
     private ConfigurationHolderSet confHolder;
     private WorldGuardPlugin wgp;
     private Map<String, Map<String, Set<String>>> worldCache;
     private Map<String, Map<Integer, Boolean>> modes;
+    private boolean completelyDisabledPVP;
     
     /**
      * @see org.bukkit.plugin.java.JavaPlugin#onEnable()
@@ -68,6 +68,7 @@ public class GBP extends JavaPlugin{
 	public void onEnable(){
 		log = getLogger();
 		pm = getServer().getPluginManager();
+		settingsFile = new File (getDataFolder() + File.separator + "settings.yml");
 		if(!setupPermissions()){
 			return;
 		}
@@ -80,8 +81,8 @@ public class GBP extends JavaPlugin{
 		} catch (IOException e) {
 			log.warning("Error while enabling Metrics.");
 		}
-		//updater = new Updater(this);
-		//getServer().getPluginManager().registerEvents(updater, this);
+		updater = new Updater(this, settings.getBoolean("updateReminderEnabled", true));
+		getServer().getPluginManager().registerEvents(updater, this);
 		log.info("is enabled.");
 	}
     
@@ -112,7 +113,7 @@ public class GBP extends JavaPlugin{
 			log.info("config.yml created.");
 		}
     	if(!settingsFile.exists()){
-			File penaltiesold = new File (mainDir + File.separator + "penalties.yml");
+			File penaltiesold = new File(getDataFolder() + File.separator + "penalties.yml");
 			if(penaltiesold.exists()){
 				penaltiesold.renameTo(settingsFile);
 				log.info("penalties.yml renamed to settings.yml.");
@@ -134,6 +135,8 @@ public class GBP extends JavaPlugin{
 		settings.addDefault("GroupNoPermAttackAnyone", "The group %g is not allowed to attack anyone!");
 		settings.addDefault("Group1NoPermAttackGroup2", "The group %g1 is not allowed to attack the group %g2!");
 		settings.addDefault("logInConsole", true);
+		settings.addDefault("completelyDisabledPVP", false);
+		settings.addDefault("updateReminderEnabled", true);
 		try {
 			settings.save(settingsFile);
 		} catch (IOException e) {
@@ -209,6 +212,7 @@ public class GBP extends JavaPlugin{
 			else
 				modesforworld.put(1, false);
 			modes.put(world.getName(), modesforworld);
+			completelyDisabledPVP = settings.getBoolean("completelyDisabledPVP");
 			log.info("Loaded world configuration in '"+world.getName()+".yml'.");
 		}
 		logConsole = settings.getBoolean("logInConsole", true);
@@ -247,6 +251,14 @@ public class GBP extends JavaPlugin{
     		return false;
     	}
 		return true;
+    }
+    
+    /**
+     * Is PVP completely disabled?
+     * @return A boolean
+     */
+    public boolean isPVPCompletelyDisabled(){
+    	return completelyDisabledPVP;
     }
     
     /**
@@ -352,12 +364,12 @@ public class GBP extends JavaPlugin{
 		return temparr;
 	}
 	
-	//MATCHING TODO
+	
 	
 	/**
 	 * Get the matching configuration at the given location with the region configuration, the world configuration and the global configuration
-	 * @param loc
-	 * @return
+	 * @param loc The location that should be checked
+	 * @return The configuration as Map with the group name as key and the disallowed groups as value
 	 */
 	public Map<String, Set<String>> getMatchingConfigurationAtLocation(Location loc){
 		Map<String, Set<String>> conf = getWorldConfigurationInCache(loc.getWorld().getName());
@@ -390,7 +402,7 @@ public class GBP extends JavaPlugin{
 		return new HashSet<String>();
 	}
 	
-	//OHNE ALLES (NOT-MATCHING) TODO
+	
 	
 	/**
 	 * Get the global configuration without the per-world and per-region configurations
@@ -443,7 +455,7 @@ public class GBP extends JavaPlugin{
 			return new HashMap<String, Set<String>>();
 	}
 	
-	// FUNKTIONEN TODO
+	
 	
 	/**
 	 * Match two configuration together

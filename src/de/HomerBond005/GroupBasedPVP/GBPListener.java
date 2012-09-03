@@ -71,6 +71,10 @@ public class GBPListener implements Listener{
 				return;
 		else
 			return;
+		if(plugin.isPVPCompletelyDisabled()){
+			event.setCancelled(true);
+			return;
+		}
 		if(plugin.hasPermission(damager, "GroupBasedPVP.pvp.everyone")){
 			return;
 		}
@@ -98,8 +102,10 @@ public class GBPListener implements Listener{
 			return;
 		}
 		for(Player player : players){
-			if(handleDamagerGroups(damager, player))
-				event.setCancelled(true);
+			if(plugin.isPVPCompletelyDisabled())
+				event.setIntensity(player, 0);
+			else if(handleDamagerGroups(damager, player))
+				event.setIntensity(player, 0);
 		}
 	}
 	

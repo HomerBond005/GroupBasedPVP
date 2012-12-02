@@ -158,64 +158,68 @@ public class GBP extends JavaPlugin{
 		
 		List<World> worlds = getServer().getWorlds();
 		for(World world : worlds){
-			File worldFile = new File(getDataFolder()+File.separator+"worlds"+File.separator+world.getName()+".yml");
-			boolean isNew = !worldFile.exists();
-			if(isNew)
-				try{
-					worldFile.createNewFile();
-				}catch (IOException e){}
-			FileConfiguration temp = YamlConfiguration.loadConfiguration(worldFile);
-			String header = "Configuration for the world '"+world.getName()+"'\n" +
-					"All values will expand the values from the global config.\n" +
-					"Use the same format as in the global config. Example configuration:\n" +
-					"modeWorld: disallow # all values in world be added to the global configuration\n" +
-					"modeRegions: allow # all values in the regions will be subtracted from th global/world configurations\n" +
-					"world:\n" +
-					"  guest: admin # guest is not allowed to attack admin\n" +
-					"regions:\n" +
-					"  pvpzone: # a zone where everyone should attack everyone\n" +
-					"    guest: admin # allow guest to attack admin";
-			if(isNew){
-				temp.options().header(header);
-			}
-			temp.addDefault("modeWorld", "disallow");
-			temp.addDefault("modeRegions", "disallow");
-			temp.addDefault("world", new HashMap<String, Object>());
-			temp.addDefault("regions", new HashMap<String, Object>());
-			temp.options().copyDefaults(true);
-			try {
-				temp.save(worldFile);
-			} catch (IOException e) {}
-			temp = YamlConfiguration.loadConfiguration(worldFile);
-			Map<String, Set<String>> tempWorldConf = new HashMap<String, Set<String>>();
-			for(String group : temp.getConfigurationSection("world").getKeys(false)){
-				tempWorldConf.put(group.toLowerCase(), new HashSet<String>(Arrays.asList(temp.getString("global."+group).toLowerCase().split(", "))));
-			}
-			confHolder.add(new ConfigurationHolder(world.getName(), world.getName(), ConfigurationType.WORLD, tempWorldConf));
-			for(String region : temp.getConfigurationSection("regions").getKeys(false)){
-				Map<String, Set<String>> regionConf = new HashMap<String, Set<String>>();
-				for(String group : temp.getConfigurationSection("regions."+region).getKeys(false)){
-					regionConf.put(group.toLowerCase(), new HashSet<String>(Arrays.asList(temp.getString("regions."+region+"."+group).toLowerCase().split(", "))));
-				}
-				confHolder.add(new ConfigurationHolder(world.getName(), region, ConfigurationType.REGION, regionConf));
-			}
-			Map<Integer, Boolean> modesforworld = new HashMap<Integer, Boolean>();
-			if(temp.getString("modeWorld").equalsIgnoreCase("allow")){
-				modesforworld.put(0, true);
-				worldCache.put(world.getName(), subtractConfiguration(getGlobalConfiguration(), getWorldConfiguration(world.getName())));
-			}else{
-				modesforworld.put(0, false);
-				worldCache.put(world.getName(), addConfiguration(getGlobalConfiguration(), getWorldConfiguration(world.getName())));
-			}
-			if(temp.getString("modeRegions").equalsIgnoreCase("allow"))
-				modesforworld.put(1, true);
-			else
-				modesforworld.put(1, false);
-			modes.put(world.getName(), modesforworld);
-			completelyDisabledPVP = settings.getBoolean("completelyDisabledPVP");
-			log.info("Loaded world configuration in '"+world.getName()+".yml'.");
+			loadWorld(world);
 		}
 		logConsole = settings.getBoolean("logInConsole", true);
+    }
+    
+    private void loadWorld(World world){
+    	File worldFile = new File(getDataFolder()+File.separator+"worlds"+File.separator+world.getName()+".yml");
+		boolean isNew = !worldFile.exists();
+		if(isNew)
+			try{
+				worldFile.createNewFile();
+			}catch (IOException e){}
+		FileConfiguration temp = YamlConfiguration.loadConfiguration(worldFile);
+		String header = "Configuration for the world '"+world.getName()+"'\n" +
+				"All values will expand the values from the global config.\n" +
+				"Use the same format as in the global config. Example configuration:\n" +
+				"modeWorld: disallow # all values in world be added to the global configuration\n" +
+				"modeRegions: allow # all values in the regions will be subtracted from th global/world configurations\n" +
+				"world:\n" +
+				"  guest: admin # guest is not allowed to attack admin\n" +
+				"regions:\n" +
+				"  pvpzone: # a zone where everyone should attack everyone\n" +
+				"    guest: admin # allow guest to attack admin";
+		if(isNew){
+			temp.options().header(header);
+		}
+		temp.addDefault("modeWorld", "disallow");
+		temp.addDefault("modeRegions", "disallow");
+		temp.addDefault("world", new HashMap<String, Object>());
+		temp.addDefault("regions", new HashMap<String, Object>());
+		temp.options().copyDefaults(true);
+		try {
+			temp.save(worldFile);
+		} catch (IOException e) {}
+		temp = YamlConfiguration.loadConfiguration(worldFile);
+		Map<String, Set<String>> tempWorldConf = new HashMap<String, Set<String>>();
+		for(String group : temp.getConfigurationSection("world").getKeys(false)){
+			tempWorldConf.put(group.toLowerCase(), new HashSet<String>(Arrays.asList(temp.getString("global."+group).toLowerCase().split(", "))));
+		}
+		confHolder.add(new ConfigurationHolder(world.getName(), world.getName(), ConfigurationType.WORLD, tempWorldConf));
+		for(String region : temp.getConfigurationSection("regions").getKeys(false)){
+			Map<String, Set<String>> regionConf = new HashMap<String, Set<String>>();
+			for(String group : temp.getConfigurationSection("regions."+region).getKeys(false)){
+				regionConf.put(group.toLowerCase(), new HashSet<String>(Arrays.asList(temp.getString("regions."+region+"."+group).toLowerCase().split(", "))));
+			}
+			confHolder.add(new ConfigurationHolder(world.getName(), region, ConfigurationType.REGION, regionConf));
+		}
+		Map<Integer, Boolean> modesforworld = new HashMap<Integer, Boolean>();
+		if(temp.getString("modeWorld").equalsIgnoreCase("allow")){
+			modesforworld.put(0, true);
+			worldCache.put(world.getName(), subtractConfiguration(getGlobalConfiguration(), getWorldConfiguration(world.getName())));
+		}else{
+			modesforworld.put(0, false);
+			worldCache.put(world.getName(), addConfiguration(getGlobalConfiguration(), getWorldConfiguration(world.getName())));
+		}
+		if(temp.getString("modeRegions").equalsIgnoreCase("allow"))
+			modesforworld.put(1, true);
+		else
+			modesforworld.put(1, false);
+		modes.put(world.getName(), modesforworld);
+		completelyDisabledPVP = settings.getBoolean("completelyDisabledPVP");
+		log.info("Loaded world configuration in '"+world.getName()+".yml'.");
     }
     
     /**
@@ -378,6 +382,8 @@ public class GBP extends JavaPlugin{
 			if(rm != null){
 				ApplicableRegionSet regions = rm.getApplicableRegions(loc);
 				for(ProtectedRegion region : regions){
+					if(modes.get(loc.getWorld().getName()) == null)
+						loadWorld(loc.getWorld());
 					if(!modes.get(loc.getWorld().getName()).get(1))
 						conf = addConfiguration(conf, getRegionConfiguration(region.getId(), loc.getWorld().getName()));
 					else

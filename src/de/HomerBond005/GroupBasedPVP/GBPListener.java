@@ -9,7 +9,7 @@ package de.HomerBond005.GroupBasedPVP;
 import java.util.HashSet;
 import java.util.Set;
 import org.bukkit.ChatColor;
-import org.bukkit.craftbukkit.entity.CraftArrow;
+import org.bukkit.entity.Arrow;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -59,9 +59,9 @@ public class GBPListener implements Listener{
 			return;
 		if(e.getDamager() instanceof Player)
 			damager = (Player) e.getDamager();
-		else if(e.getDamager() instanceof CraftArrow)
-			if(((CraftArrow)e.getDamager()).getShooter() instanceof Player)
-				damager = (Player)((CraftArrow)e.getDamager()).getShooter();
+		else if(e.getDamager() instanceof Arrow)
+			if(((Arrow)e.getDamager()).getShooter() instanceof Player)
+				damager = (Player)((Arrow)e.getDamager()).getShooter();
 			else
 				return;
 		else if(e.getDamager() instanceof Snowball)
@@ -75,7 +75,7 @@ public class GBPListener implements Listener{
 			event.setCancelled(true);
 			return;
 		}
-		if(plugin.hasPermission(damager, "GroupBasedPVP.pvp.everyone")){
+		if(plugin.pc.has(damager, "GroupBasedPVP.pvp.everyone")){
 			return;
 		}
 		if(handleDamagerGroups(damager, player))
@@ -98,7 +98,7 @@ public class GBPListener implements Listener{
 			damager = (Player) event.getPotion().getShooter();
 		else
 			return;
-		if(plugin.hasPermission(damager, "GroupBasedPVP.pvp.everyone")){
+		if(plugin.pc.has(damager, "GroupBasedPVP.pvp.everyone")){
 			return;
 		}
 		for(Player player : players){
@@ -116,7 +116,7 @@ public class GBPListener implements Listener{
 	 * @return Does the damager has insufficient permissions?
 	 */
 	private boolean handleDamagerGroups(Player damager, Player damaged){
-		if(plugin.hasPermission(damager, "GroupBasedPVP.pvp.disallow")){
+		if(plugin.pc.has(damager, "GroupBasedPVP.pvp.disallow")){
 			if(stringNoPermAttackAnyone.length() != 0||stringNoPermAttackAnyone.equalsIgnoreCase("false"))
 				damager.sendMessage(ChatColor.RED+stringNoPermAttackAnyone);
 			try{
@@ -131,7 +131,7 @@ public class GBPListener implements Listener{
 			}
 			return true;
 		}
-		if(plugin.hasPermission(damaged, "GroupBasedPVP.pvp.protect")){
+		if(plugin.pc.has(damaged, "GroupBasedPVP.pvp.protect")){
 			if(stringCannotBeAttacked.length() != 0||stringCannotBeAttacked.equalsIgnoreCase("false"))
 				damager.sendMessage(ChatColor.RED + stringCannotBeAttacked.replaceAll("%p", damaged.getDisplayName()));
 			try{
@@ -164,7 +164,7 @@ public class GBPListener implements Listener{
 					illegal = true;
 				}
 				if(illegal == true){
-					if(!plugin.hasPermission(damager, "GroupBasedPVP.pvpgroup."+disallowedGroup)){
+					if(!plugin.pc.has(damager, "GroupBasedPVP.pvpgroup."+disallowedGroup)){
 						try{
 							damager.setHealth(damager.getHealth() + penalty);
 						}catch(IllegalArgumentException exe){

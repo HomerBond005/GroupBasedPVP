@@ -60,6 +60,7 @@ public class GBP extends JavaPlugin{
     private Map<String, Map<String, Set<String>>> worldCache;
     private Map<String, Map<Integer, Boolean>> modes;
     private boolean completelyDisabledPVP;
+    PermissionsChecker pc;
     
     /**
      * @see org.bukkit.plugin.java.JavaPlugin#onEnable()
@@ -98,6 +99,7 @@ public class GBP extends JavaPlugin{
      * Reload all the settings and config files
      */
     private void reload(){
+    	pc = new PermissionsChecker(this, true);
     	if(!new File(getDataFolder(), "config.yml").exists()){
     		getConfig().options().header("Global configuration file for GroupBasedPVP\n" +
     				"All values inside this file will be inherited to all worlds and all regions\n" +
@@ -316,32 +318,6 @@ public class GBP extends JavaPlugin{
 				return true;
 		}
 		return false;
-	}
-	
-	/**
-	 * Check if a player has a permission
-	 * @param player The player
-	 * @param permission The permission node that should be checked
-	 * @return Does the player has the permission?
-	 */
-	public boolean hasPermission(Player player, String permission){
-		if(permSys == 1){
-			return player.hasPermission(permission);
-		}else if(permSys == 2){
-			return pexmanager.has(player, permission);
-		}else if(permSys == 3){
-			return ApiLayer.hasPermission(player.getWorld().getName(), CalculableType.USER, player.getName(), permission);
-		}else if(permSys == 4){
-			AnjoPermissionsHandler holder = groupmanager.getWorldsHolder().getWorldPermissionsByPlayerName(player.getName());
-			if (holder == null) {
-	            return false;
-	        }
-	        return holder.permission(player.getName(), permission);
-		}else if(permSys == 5){
-			return vault.has(player, permission);
-		}else{
-			return false;
-		}
 	}
 	
 	/**

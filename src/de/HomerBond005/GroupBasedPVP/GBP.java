@@ -197,7 +197,7 @@ public class GBP extends JavaPlugin{
 		temp = YamlConfiguration.loadConfiguration(worldFile);
 		Map<String, Set<String>> tempWorldConf = new HashMap<String, Set<String>>();
 		for(String group : temp.getConfigurationSection("world").getKeys(false)){
-			tempWorldConf.put(group.toLowerCase(), new HashSet<String>(Arrays.asList(temp.getString("global."+group).toLowerCase().split(", "))));
+			tempWorldConf.put(group.toLowerCase(), new HashSet<String>(Arrays.asList(temp.getString("world."+group).toLowerCase().split(", "))));
 		}
 		confHolder.add(new ConfigurationHolder(world.getName(), world.getName(), ConfigurationType.WORLD, tempWorldConf));
 		for(String region : temp.getConfigurationSection("regions").getKeys(false)){

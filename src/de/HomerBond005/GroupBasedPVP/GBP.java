@@ -40,6 +40,7 @@ import de.bananaco.bpermissions.api.util.CalculableType;
 import org.anjocaido.groupmanager.GroupManager;
 import org.anjocaido.groupmanager.permissions.AnjoPermissionsHandler;
 
+@SuppressWarnings("deprecation")
 public class GBP extends JavaPlugin {
 	private File settingsFile;
 	private FileConfiguration settings;

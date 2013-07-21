@@ -9,18 +9,20 @@ package de.HomerBond005.GroupBasedPVP;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Damageable;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Snowball;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
-import org.bukkit.entity.Snowball;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -31,7 +33,7 @@ public class GBPListener implements Listener {
 	private String stringGroup1NoPermAttackGroup2 = "";
 	private int gift = 0;
 	private int penalty = 0;
-	private GBP plugin;
+	private final GBP plugin;
 
 	public GBPListener(GBP gbp) {
 		plugin = gbp;
@@ -51,7 +53,7 @@ public class GBPListener implements Listener {
 	 */
 	@EventHandler(priority = EventPriority.HIGH)
 	public void onEntityDamage(EntityDamageEvent event) {
-		if(event.isCancelled())
+		if (event.isCancelled())
 			return;
 		Player player = null;
 		Player damager = null;
@@ -96,7 +98,7 @@ public class GBPListener implements Listener {
 	 */
 	@EventHandler(priority = EventPriority.HIGH)
 	public void onPotionSplashEvent(PotionSplashEvent event) {
-		if(event.isCancelled())
+		if (event.isCancelled())
 			return;
 		if (plugin.getIgnoreHealingPotions()) {
 			Collection<PotionEffect> effects = event.getPotion().getEffects();
@@ -110,7 +112,7 @@ public class GBPListener implements Listener {
 		Set<Player> players = new HashSet<Player>();
 		for (LivingEntity possplayer : event.getAffectedEntities()) {
 			if (possplayer instanceof Player)
-				if(!plugin.getIgnoreCreativeOnPotions()||((Player) possplayer).getGameMode() != GameMode.CREATIVE)
+				if (!plugin.getIgnoreCreativeOnPotions() || ((Player) possplayer).getGameMode() != GameMode.CREATIVE)
 					players.add((Player) possplayer);
 		}
 		Player damager;
@@ -141,14 +143,14 @@ public class GBPListener implements Listener {
 			if (stringNoPermAttackAnyone.length() != 0 || stringNoPermAttackAnyone.equalsIgnoreCase("false"))
 				damager.sendMessage(ChatColor.RED + stringNoPermAttackAnyone);
 			try {
-				damager.setHealth(damager.getHealth() + penalty);
+				damager.setHealth(((Damageable) damager).getHealth() + penalty);
 			} catch (IllegalArgumentException exe) {
-				damager.setHealth(0);
+				damager.setHealth(0D);
 			}
 			try {
-				damaged.setHealth(damaged.getHealth() + gift);
+				damaged.setHealth(((Damageable) damaged).getHealth() + gift);
 			} catch (IllegalArgumentException exe) {
-				damaged.setHealth(20);
+				damaged.setHealth(20D);
 			}
 			return true;
 		}
@@ -156,14 +158,14 @@ public class GBPListener implements Listener {
 			if (stringCannotBeAttacked.length() != 0 || stringCannotBeAttacked.equalsIgnoreCase("false"))
 				damager.sendMessage(ChatColor.RED + stringCannotBeAttacked.replaceAll("%p", damaged.getDisplayName()));
 			try {
-				damager.setHealth(damager.getHealth() + penalty);
+				damager.setHealth(((Damageable) damager).getHealth() + penalty);
 			} catch (IllegalArgumentException exe) {
-				damager.setHealth(0);
+				damager.setHealth(0D);
 			}
 			try {
-				damaged.setHealth(damaged.getHealth() + gift);
+				damaged.setHealth(((Damageable) damaged).getHealth() + gift);
 			} catch (IllegalArgumentException exe) {
-				damaged.setHealth(20);
+				damaged.setHealth(20D);
 			}
 			return true;
 		}
@@ -187,14 +189,14 @@ public class GBPListener implements Listener {
 				if (illegal == true) {
 					if (!plugin.pc.has(damager, "GroupBasedPVP.pvpgroup." + disallowedGroup)) {
 						try {
-							damager.setHealth(damager.getHealth() + penalty);
+							damager.setHealth(((Damageable) damager).getHealth() + penalty);
 						} catch (IllegalArgumentException exe) {
-							damager.setHealth(0);
+							damager.setHealth(0D);
 						}
 						try {
-							damaged.setHealth(damaged.getHealth() + gift);
+							damaged.setHealth(((Damageable) damaged).getHealth() + gift);
 						} catch (IllegalArgumentException exe) {
-							damaged.setHealth(20);
+							damaged.setHealth(20D);
 						}
 						return true;
 					}

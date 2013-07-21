@@ -2,6 +2,7 @@ package de.HomerBond005.GroupBasedPVP;
 
 import java.util.Map;
 import java.util.Set;
+
 import de.HomerBond005.GroupBasedPVP.ConfigurationHolderSet.ConfigurationType;
 
 /**
@@ -11,8 +12,8 @@ import de.HomerBond005.GroupBasedPVP.ConfigurationHolderSet.ConfigurationType;
  * 
  */
 public abstract class ConfigurationHolder {
-	private String world;
-	private String name;
+	private final String world;
+	private final String name;
 	private Map<String, Set<String>> conf;
 
 	/**
@@ -23,7 +24,8 @@ public abstract class ConfigurationHolder {
 	 * @param conf A map with the group name as key and the disallowed groups as
 	 *        value
 	 */
-	public ConfigurationHolder(String world, String name, Map<String, Set<String>> conf) {
+	public ConfigurationHolder(String world, String name,
+			Map<String, Set<String>> conf) {
 		this.world = world;
 		this.name = name;
 		this.conf = conf;

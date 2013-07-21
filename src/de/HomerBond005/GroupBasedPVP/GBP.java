@@ -17,28 +17,35 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Logger;
+
 import net.milkbowl.vault.permission.Permission;
+
+import org.anjocaido.groupmanager.GroupManager;
+import org.anjocaido.groupmanager.permissions.AnjoPermissionsHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.mcstats.Metrics;
+
 import ru.tehkode.permissions.PermissionGroup;
 import ru.tehkode.permissions.PermissionManager;
 import ru.tehkode.permissions.bukkit.PermissionsEx;
-import com.platymuus.bukkit.permissions.*;
+
+import com.platymuus.bukkit.permissions.PermissionInfo;
+import com.platymuus.bukkit.permissions.PermissionsPlugin;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+
 import de.bananaco.bpermissions.api.ApiLayer;
 import de.bananaco.bpermissions.api.util.CalculableType;
-import org.anjocaido.groupmanager.GroupManager;
-import org.anjocaido.groupmanager.permissions.AnjoPermissionsHandler;
 
 @SuppressWarnings("deprecation")
 public class GBP extends JavaPlugin {
@@ -53,7 +60,6 @@ public class GBP extends JavaPlugin {
 	private int permSys;
 	private boolean logConsole;
 	private Logger log;
-	private Updater updater;
 	private Permission vault;
 	private ConfigurationHolderSet confHolder;
 	private WorldGuardPlugin wgp;
@@ -84,8 +90,6 @@ public class GBP extends JavaPlugin {
 		} catch (IOException e) {
 			log.warning("Error while enabling Metrics.");
 		}
-		updater = new Updater(this, settings.getBoolean("updateReminderEnabled", true));
-		getServer().getPluginManager().registerEvents(updater, this);
 		log.info("is enabled.");
 	}
 
@@ -136,7 +140,6 @@ public class GBP extends JavaPlugin {
 		settings.addDefault("completelyDisabledPVP", false);
 		settings.addDefault("ignoreHealingPotions", false);
 		settings.addDefault("ignoreCreativeOnPotions", false);
-		settings.addDefault("updateReminderEnabled", true);
 		try {
 			settings.save(settingsFile);
 		} catch (IOException e) {

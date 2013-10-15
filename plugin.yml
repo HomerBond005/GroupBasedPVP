@@ -1,6 +1,7 @@
 name: GroupBasedPVP
-main: de.HomerBond005.GroupBasedPVP.GBP
+main: de.homerbond005.groupbasedpvp.GBP
 author: HomerBond005
-version: 2.1.1
+version: '@PROJECT_VERSION@'
+depend: [Vault]
 softdepend: [Multiverse-Core]
 commands:

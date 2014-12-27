@@ -5,7 +5,7 @@
 
 	<groupId>de.homerbond005</groupId>
 	<artifactId>groupbasedpvp</artifactId>
-	<version>2.2</version>
+	<version>2.2.1</version>
 	<name>GroupBasedPVP</name>
 
 	<repositories>
@@ -15,7 +15,7 @@
 		</repository>
 		<repository>
 			<id>vault-repo</id>
-			<url>http://ci.herocraftonline.com/plugin/repository/everything/</url>
+			<url>http://nexus.theyeticave.net/content/repositories/pub_releases/</url>
 		</repository>
 		<repository>
 			<id>sk89q-repo</id>
@@ -88,14 +88,19 @@
 			<version>[1.6.4,)</version>
 		</dependency>
 		<dependency>
-			<groupId>net.milkbowl</groupId>
-			<artifactId>vault</artifactId>
-			<version>1.2.27</version>
+			<groupId>net.milkbowl.vault</groupId>
+			<artifactId>Vault</artifactId>
+			<version>[1.5.0,)</version>
 		</dependency>
 		<dependency>
 			<groupId>com.sk89q</groupId>
 			<artifactId>worldguard</artifactId>
-			<version>[5.8,)</version>
+			<version>[5.9,)</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sk89q</groupId>
+			<artifactId>worldedit</artifactId>
+			<version>[5.6.3,)</version>
 		</dependency>
 	</dependencies>
 </project>
